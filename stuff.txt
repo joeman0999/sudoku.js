@@ -1,0 +1,7 @@
+cands = sudoku.get_candidates(sudoku.board_grid_to_string(boards["easy"]))
+cand_board = sudoku.grid_to_board(cands)
+
+sudoku._eliminate(cand_board,"I7", "7")
+cands = sudoku.board_to_grid(cand_board)
+
+display_puzzle(cands, true)

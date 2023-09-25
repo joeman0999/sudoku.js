@@ -1,0 +1,138 @@
+<!-- 
+    Originally from Sudoku.js demo
+    ==============
+    Read more at https://github.com/robatron/sudoku-js
+-->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Sudoku</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <!-- Styles -->
+        <link href="css/bootstrap.min.css" rel="stylesheet" />
+        <link href="css/styles.css" rel="stylesheet" />
+        <link href="css/bootstrap-responsive.min.css" rel="stylesheet" />
+
+        <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+        <!--[if lt IE 9]>
+            <script src="assets/js/html5shiv-pre3.6.js"></script>
+        <![endif]-->
+
+        <!-- touch icons -->
+        <link rel="apple-touch-icon-precomposed" sizes="144x144" 
+                href="ico/apple-touch-icon-144-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="114x114" 
+                href="ico/apple-touch-icon-114-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="72x72"
+                href="ico/apple-touch-icon-72-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" 
+                href="ico/apple-touch-icon-57-precomposed.png">
+    </head>
+
+    <body>
+        <div id="loading" class="container-narrow">
+            <p>
+                <img src="img/pacman.gif"/> Loading...
+            </p>
+        </div>
+        <div id="app-wrap" class="container-narrow hidden">
+            <!-- Masthead -->
+            <h1>Sudoku</h1>
+            <p class="lead">
+                Select a difficulty
+            </p>
+
+            <br>
+            
+            <!-- Tabs -->
+            <ul id="generator-tabs" class="nav nav-tabs">
+                <li>
+                    <button id="easy" rel="tooltip" 
+                            title="Generate a easy puzzle" href="#">Easy</button>
+                </li>
+                <li>
+                    <button id="medium" rel="tooltip" title="Generate a medium puzzle" 
+                            href="#">Medium</button>
+                </li>
+                <li>
+                    <button id="hard" rel="tooltip" 
+                            title="Generate a hard puzzle" href="#">Hard</button>
+                </li>
+                <li>
+                    <button id="insane" rel="tooltip" 
+                            title="Generate an insane puzzle" href="#">Insane</button>
+                </li>
+                <li class="pull-right" hidden="True">
+                    <button id="import" rel="tooltip" title="Import your own puzzle" 
+                            href="#" >Import...</button>
+                </li>
+            </ul>
+            
+            <div id="import-controls" hidden="True">
+                <input id="import-string" class="input-block-level" 
+                    placeholder="Enter a puzzle as a string of 81 digits, 1-9, and '.' as spaces."
+                    maxlength="81"
+                    type="text"/>
+            </div>
+            
+
+            <div id="game">
+                <!-- Sudoku board -->
+                <table class="table">
+                    <tbody id="sudoku-board"></tbody>
+                </table>
+
+                <div id="puzzle-controls" class="center">
+                    <div id="puzzle-options">
+                        <button id="notes" rel="tooltip" 
+                        title="Write a number in a cell">Cell</button>
+                    </div>
+                    <div id="number-buttons">
+                        <button id="1">1</button>
+                        <button id="2">2</button>
+                        <button id="3">3</button>
+                        <button id="4">4</button>
+                        <button id="5">5</button>
+                        <button id="6">6</button>
+                        <button id="7">7</button>
+                        <button id="8">8</button>
+                        <button id="9">9</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Message box -->
+            <div id="message" class="alert alert-error">
+                <button type="button" class="close" data-dismiss="alert">
+                    &times;
+                </button>
+                <div id="text"></div>
+            </div>
+            
+            <!-- Solver buttons -->
+            <div id="solver-controls">
+                <button id="solve" class="btn btn-primary" rel="tooltip" 
+                        title="Solve the current puzzle!" 
+                        data-placement="bottom">Solve!</button>
+                <button id="get-candidates" class="btn pull-right" rel="tooltip" 
+                        title="Show all possible values for each empty square" 
+                        data-placement="bottom">Show Candidates</button>
+            </div>
+        </div> <!-- /container -->
+        
+        <button onclick="JoesFunc()">Joes Button</button>
+
+        <!-- javascript
+             (Placed at the bottom so the DOM loads faster) -->
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="js/jquery.min.js"></script>
+        <script src="js/bootstrap.min.js"></script>
+        <script src="js/sudoku.js"></script>
+        <script src="js/game.js"></script>
+        
+    </body>
+</html>
