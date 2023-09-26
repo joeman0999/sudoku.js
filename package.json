@@ -1,0 +1,9 @@
+{
+    "name": "multiplayer-sudoku-game",
+    "version": "0.0.1",
+    "description": "allows two or more players to compete or work together to play sudoku on the web",
+    "dependencies": {
+        "express": "^4.18.2",
+        "socket.io": "^4.7.2"
+    }
+}
