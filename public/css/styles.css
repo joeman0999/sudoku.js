@@ -1,0 +1,116 @@
+/* Styles for the Sudoku.js demo page
+*/
+
+body {
+    padding-top: 60px;
+    padding-bottom: 40px;
+}
+
+.container-narrow {
+    /* Custom, narrow container */
+    margin: 0 auto;
+    max-width: 600px;
+ }
+
+#footer {
+    margin-top: 120px;    
+}
+
+#sudoku-board {
+    border: 2px solid black;
+    margin:0px;
+    padding: 0px;
+}
+
+#sudoku-board td.mainBoard {
+    margin:0px;
+    padding: 0px;
+    border-collapse:collapse;
+    border: 1px solid black;
+    line-height: normal;
+}
+
+#sudoku-board tr.mainBoardRow {
+    margin:0px;
+    padding: 0px;
+    border-collapse:collapse;
+}
+
+#sudoku-board div.square {
+    display: block;
+    margin:0px;
+    padding: 0px;
+    width: 66px;
+    height: 51px;
+    font-size: 40px;
+    text-align: center;
+}
+
+table.innerTable {
+    display: block;
+    margin:0px;
+    padding: 0px;
+    font-size: 10px;
+    text-align: center;
+    border-collapse:collapse;
+    border:0px;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+table.innerTable tr {
+    display: block;
+    margin:0px;
+    padding: 0px;
+    text-align: center;
+    border-collapse:collapse;
+    border:0px;
+}
+
+table.innerTable td {
+    margin:0px;
+    padding: 0px;
+    text-align: center;
+    border-collapse:collapse;
+    border:0px;
+}
+
+table.innerTable div.innerSquare {
+    display: block;
+    margin:0px;
+    padding: 0px;
+    width: 22px;
+    height: 17px;
+    font-size: 14px;
+    text-align: center;
+    border-collapse:collapse;
+    border:0px;
+}
+
+#sudoku-board .border-right {
+    border-right: 2px solid black !important;
+}
+
+#sudoku-board .border-bottom {
+    border-bottom: 2px solid black;
+}
+
+.green-text {
+    color: ForestGreen !important;
+}
+
+.bold-text {
+    font-weight: bold;
+}
+
+.selected-box {
+    background-color: lightskyblue;
+}
+
+.related-box {
+    background-color: lightblue;
+}
+
+.center {
+    text-align: center;
+}
