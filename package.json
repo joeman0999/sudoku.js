@@ -1,9 +1,27 @@
 {
-    "name": "multiplayer-sudoku-game",
-    "version": "0.0.1",
-    "description": "allows two or more players to compete or work together to play sudoku on the web",
-    "dependencies": {
-        "express": "^4.18.2",
-        "socket.io": "^4.7.2"
-    }
+  "name": "multiplayer-sudoku-game",
+  "version": "0.0.1",
+  "description": "allows two or more players to compete or work together to play sudoku on the web",
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-cmd": "^5.0.0",
+    "nodemon": "^3.0.1",
+    "npx": "^10.2.2",
+    "socket.io": "^4.7.2"
+  },
+  "scripts": {
+    "test": "standard",
+    "start": "node index.js"
+  },
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joeman0999/sudoku.js.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/joeman0999/sudoku.js/issues"
+  },
+  "homepage": "https://github.com/joeman0999/sudoku.js#readme"
 }
