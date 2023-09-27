@@ -1,8 +1,5 @@
 /*
-    Sudoku.js
-    ---------
-
-    A Sudoku puzzle generator and solver JavaScript library.
+    A Sudoku puzzle generator and solver library.
 
     Please see the README for more details.
 */
@@ -49,9 +46,10 @@
             "max": 29
         }
     };
+
     var TRUE_DIFFICULTY_RANGES = {
         "Beginner": {
-            "min": 3600,
+            "min": 0,
             "max": 4500
         },
         "Easy": {
@@ -74,7 +72,7 @@
             "min": 11000,
             "max": 25000
         },
-    };    
+    };
 
 
     // Blank character and board representation
@@ -90,14 +88,16 @@
         SQUARES             = sudoku._cross(ROWS, COLS);
         UNITS               = sudoku._get_all_units(ROWS, COLS);
         SQUARE_UNITS_MAP    = sudoku._get_square_units_map(SQUARES, UNITS);
+        sudoku.SQUARE_UNITS_MAP = SQUARE_UNITS_MAP;
         SQUARE_PEERS_MAP    = sudoku._get_square_peers_map(SQUARES, 
                                     SQUARE_UNITS_MAP);
+        sudoku.SQUARE_PEERS_MAP = SQUARE_PEERS_MAP;
     }
 
     // Generate
     // -------------------------------------------------------------------------
     sudoku.generate = function(difficulty, unique){
-        /* Generate a new Sudoku puzzle of a particular `difficulty`, e.g.,
+        /* Generate a new Sudoku puzzle of a particular `difficulty` and it's solution, e.g.,
         
             // Generate an "easy" sudoku puzzle
             sudoku.generate("easy");
@@ -141,80 +141,81 @@
         if (unique !== false) {
             unique = true;
         }
-        
-        // Get a set of squares and all possible candidates for each square
-        var blank_board = "";
-        for(var i = 0; i < NR_SQUARES; ++i){
-            blank_board += '.';
-        }
-        var candidates = sudoku._get_candidates_map(blank_board);
-        
-        // For each item in a shuffled list of squares
-        var shuffled_squares = sudoku._shuffle(SQUARES);
-        for(var si in shuffled_squares){
-            var square = shuffled_squares[si];
-            
-            // If an assignment of a random chioce causes a contradictoin, give
-            // up and try again
-            var rand_candidate_idx = 
-                    sudoku._rand_range(candidates[square].length);
-            var rand_candidate = candidates[square][rand_candidate_idx];
-            if(!sudoku._assign(candidates, square, rand_candidate)){
-                break;
+        // keep trying until we generate a solveable board
+        while (true) {
+            // Get a set of squares and all possible candidates for each square
+            var blank_board = "";
+            for(var i = 0; i < NR_SQUARES; ++i){
+                blank_board += '.';
             }
+            var candidates = sudoku._get_candidates_map(blank_board);
             
-            // Make a list of all single candidates
-            var single_candidates = [];
-            for(var si in SQUARES){
-                var square = SQUARES[si];
+            // For each item in a shuffled list of squares
+            var shuffled_squares = sudoku._shuffle(SQUARES);
+            for(var si in shuffled_squares){
+                var square = shuffled_squares[si];
                 
-                if(candidates[square].length == 1){
-                    single_candidates.push(candidates[square]);
+                // If an assignment of a random chioce causes a contradictoin, give
+                // up and try again
+                var rand_candidate_idx = 
+                        sudoku._rand_range(candidates[square].length);
+                var rand_candidate = candidates[square][rand_candidate_idx];
+                if(!sudoku._assign(candidates, square, rand_candidate)){
+                    break;
                 }
-            }
-            
-            // If we have at least difficulty, and the unique candidate count is
-            // at least 8, return the puzzle!
-            if(single_candidates.length >= difficulty && 
-                    sudoku._strip_dups(single_candidates).length >= 8){
-                var board = "";
-                var givens_idxs = [];
-                for(var i in SQUARES){
-                    var square = SQUARES[i];
+                
+                // Make a list of all single candidates
+                var single_candidates = [];
+                for(var si in SQUARES){
+                    var square = SQUARES[si];
+                    
                     if(candidates[square].length == 1){
-                        board += candidates[square];
-                        givens_idxs.push(i);
+                        single_candidates.push(candidates[square]);
+                    }
+                }
+                
+                // If we have at least difficulty, and the unique candidate count is
+                // at least 8, return the puzzle!
+                if(single_candidates.length >= difficulty && 
+                        sudoku._strip_dups(single_candidates).length >= 8){
+                    var board = "";
+                    var givens_idxs = [];
+                    for(var i in SQUARES){
+                        var square = SQUARES[i];
+                        if(candidates[square].length == 1){
+                            board += candidates[square];
+                            givens_idxs.push(i);
+                        } else {
+                            board += sudoku.BLANK_CHAR;
+                        }
+                    }
+                    
+                    // If we have more than `difficulty` givens, remove some random
+                    // givens until we're down to exactly `difficulty`
+                    var nr_givens = givens_idxs.length;
+                    if(nr_givens > difficulty){
+                        givens_idxs = sudoku._shuffle(givens_idxs);
+                        for(var i = 0; i < nr_givens - difficulty; ++i){
+                            var target = parseInt(givens_idxs[i]);
+                            board = board.substr(0, target) + sudoku.BLANK_CHAR + 
+                                board.substr(target + 1);
+                        }
+                    }
+                    
+                    // Double check board is solvable
+                    // TODO: Make a standalone board checker. Solve is expensive.
+                    var solution = sudoku.solve(board, false);
+                    var solution2 = sudoku.solve(board, true);
+                    if(solution !== false && solution == solution2){
+                        var difficulty = sudoku.human_solve(board);
+                        return {board, solution};
                     } else {
-                        board += sudoku.BLANK_CHAR;
+                        // try again
+                        break;
                     }
-                }
-                
-                // If we have more than `difficulty` givens, remove some random
-                // givens until we're down to exactly `difficulty`
-                var nr_givens = givens_idxs.length;
-                if(nr_givens > difficulty){
-                    givens_idxs = sudoku._shuffle(givens_idxs);
-                    for(var i = 0; i < nr_givens - difficulty; ++i){
-                        var target = parseInt(givens_idxs[i]);
-                        board = board.substr(0, target) + sudoku.BLANK_CHAR + 
-                            board.substr(target + 1);
-                    }
-                }
-                
-                // Double check board is solvable
-                // TODO: Make a standalone board checker. Solve is expensive.
-                var solution1 = sudoku.solve(board, false);
-                var solution2 = sudoku.solve(board, true);
-                if(solution1 !== false && solution1 == solution2){
-                    return board;
-                } else {
-                    return sudoku.generate(difficulty, unique);
                 }
             }
         }
-        
-        // Give up and try a new puzzle
-        return sudoku.generate(difficulty);
     };
 
     // Solve
@@ -263,6 +264,40 @@
         return false;
     };
 
+    
+
+    sudoku.get_initial_candidates = function(board){
+        /* Return all possible candidatees for each square as a grid of 
+        candidates
+        */
+        var candidate_map = {};
+        var squares_values_map = sudoku._get_square_vals_map(board);
+        
+        // Start by assigning every digit as a candidate to every square
+        for(var si in SQUARES){
+            candidate_map[SQUARES[si]] = sudoku.DIGITS;
+        }
+        
+        // For each non-blank square, assign its value in the candidate map and
+        // propigate.
+        for(var square in squares_values_map){
+            var val = squares_values_map[square];
+            
+            if(sudoku._in(val, sudoku.DIGITS)){
+                candidate_map[square] = val;
+                for(var ui in SQUARE_PEERS_MAP[square]){
+                    var x = SQUARE_PEERS_MAP[square][ui];
+                    candidate_map[x] = candidate_map[x].replace(val, '');
+                    
+                }
+
+            }
+        }
+        
+        // Transform candidates map into grid
+        return sudoku.board_map_to_grid(candidate_map);
+    }
+
     sudoku.get_candidates = function(board){
         /* Return all possible candidatees for each square as a grid of 
         candidates, returnning `false` if a contradiction is encountered.
@@ -288,6 +323,7 @@
         // Transform candidates map into grid
         return sudoku.board_map_to_grid(candidates_map);
     }
+    
 
     sudoku._get_candidates_map = function(board){
         /* Get all possible candidates for each square as a map in the form
@@ -344,7 +380,6 @@
         // If only one candidate for every square, we have a solved puzzle!
         // Return the candidates map.
         var max_nr_candidates = 0;
-        var max_candidates_square = null;
         for(var si in SQUARES){
             var square = SQUARES[si];
             
@@ -352,7 +387,6 @@
                 
             if(nr_candidates > max_nr_candidates){
                 max_nr_candidates = nr_candidates;
-                max_candidates_square = square;
             }
         }
         if(max_nr_candidates === 1){
@@ -682,6 +716,19 @@
             }   
         }
         return new_grid;
+    }
+
+    sudoku.pos_to_map = function(row, col) {
+        row = Number(row);
+        col = Number(col) + 1;
+        var pos = String.fromCharCode('A'.charCodeAt() + row) + col.toString();
+        return pos;
+    }
+
+    sudoku.map_to_pos = function(pos) {
+        var row = pos[0].charCodeAt() - 65;
+        var col = Number(pos[1] - 1);
+        return {row, col};
     }
     
 

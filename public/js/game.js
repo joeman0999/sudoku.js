@@ -1,10 +1,14 @@
-/* 
-    Quick-n-dirty demo page for Sudoku.js.
+// Code for a multiplayer sudoku
 
-    For more information, please see https://github.com/robatron/sudoku.js
+/*
+Additional Controls:
+    arrow keys to move squares
+    number keys for editing squares
+    tab to switch between cell nad note
+
+Code remaining techniques
 */
 
-//|||||||||||||||||||||||||||||||||||||
 var socket = io();
 
 // Selectors
@@ -196,6 +200,15 @@ var init_controls = function(){
             $(this).title = "Write a number in a cell";
         }
     });
+
+    $(PUZZLE_CONTROLS_SEL + " #reset").click(function(e){
+        e.preventDefault();
+        BOARD.user_vals = JSON.parse(JSON.stringify(BOARD.original_board));
+        BOARD.candidates = JSON.parse(JSON.stringify(BOARD.original_board));
+        // Display the puzzle
+        display_puzzle(BOARD.original_board, null, null);
+        
+    });
     
     // Number buttons
     $("#number-buttons button").click(function(e){
@@ -208,15 +221,25 @@ var init_controls = function(){
                 $selected_square.addClass("green-text");
                 var number = $(this).text();
                 if ($(PUZZLE_CONTROLS_SEL + " #notes").text() == "Cell") {
+                    
                     if (BOARD.user_vals[row][column] == number) {
-                        $selected_square.text("");
+                        // number is there set it to nothing
                         BOARD.user_vals[row][column] = "";
                     } else {
-                        $selected_square.text(number);
+                        // number is not there set it to the new number and erase the candidates for this square
                         BOARD.user_vals[row][column] = number;
+                        BOARD.candidates[row][column] = "";
+                        
+                        console.log(sudoku.SQUARE_PEERS_MAP);
+                        var map_pos = sudoku.pos_to_map(row, column);
+                        for(var ui in sudoku.SQUARE_PEERS_MAP[map_pos]){
+                            var x = sudoku.SQUARE_PEERS_MAP[map_pos][ui];
+                            var row_col = sudoku.map_to_pos(x);
+                            BOARD.candidates[row_col.row][row_col.col] = BOARD.candidates[row_col.row][row_col.col].replace(number, '');
+                        }
                     }
                 } else {
-                    $selected_square.text("");
+                    BOARD.user_vals[row][column] = "";
                     if (BOARD.candidates[row][column].includes(number)) {
                         BOARD.candidates[row][column] = BOARD.candidates[row][column].replace(number, '');
                     } else if (BOARD.candidates[row][column] == sudoku.BLANK_CHAR) {
@@ -224,9 +247,9 @@ var init_controls = function(){
                     } else {
                         BOARD.candidates[row][column] += number;
                     }
-                    $selected_square.append(build_markup_square(BOARD.candidates[row][column]));
                 }
             }
+            display_puzzle(BOARD.original_board, BOARD.user_vals, BOARD.candidates);
         }
 
     });
@@ -272,7 +295,7 @@ var init_controls = function(){
         /* Get candidates for the current puzzle
         */
         e.preventDefault();
-        BOARD.candidates = get_candidates();
+        BOARD.candidates = get_initial_candidates();
     });
 };
 
@@ -312,36 +335,24 @@ var solve_puzzle = function(){
     }
 };
 
-var get_candidates = function(){
+var get_initial_candidates = function(){
     /* Get the candidates for the specified puzzle and show it
-    returns the found candidates or false if the puzzle was unsolvable
+    returns the found candidates
     */
     
     // Get candidates only if it's a valid puzzle
     if(typeof BOARD.original_board !== "undefined"){
-        var error = false;
-        try{
-            var candidates = 
-                sudoku.get_candidates(
-                    sudoku.board_grid_to_string(BOARD.original_board)
-                );
-        } catch(e) {
-            error = true;
-        }
         
-        // Display the candidates if solved successfully, display error if
-        // unable to solve.
-        if(candidates && !error){
-            display_puzzle(BOARD.original_board, null, candidates);
-            $(MESSAGE_SEL).hide();
-            return candidates;
-        } else {
-            $(MESSAGE_SEL + " #text")
-                .html("<strong>Unable to display candidates!</strong> " +
-                    "Contradictions encountered. Check puzzle and try again.");
-            $(MESSAGE_SEL).show();
-            return false;
-        }
+        var candidates = 
+            sudoku.get_initial_candidates(
+                sudoku.board_grid_to_string(BOARD.original_board)
+            );
+        
+        
+        // Display the candidates
+        display_puzzle(BOARD.original_board, null, candidates);
+        $(MESSAGE_SEL).hide();
+        return candidates;
     }
 }
 
@@ -358,7 +369,9 @@ var show_puzzle = function(){
     if(BOARD.difficulty === "import"){
         BOARD.original_board = sudoku.board_string_to_grid(sudoku.BLANK_BOARD);
     } else {
-        BOARD.original_board = sudoku.board_string_to_grid(sudoku.generate(BOARD.difficulty));
+        var result = sudoku.generate(BOARD.difficulty);
+        BOARD.original_board = sudoku.board_string_to_grid(result.board);
+        BOARD.solution = sudoku.board_string_to_grid(result.solution);
     }
     BOARD.user_vals = JSON.parse(JSON.stringify(BOARD.original_board));
     BOARD.candidates = JSON.parse(JSON.stringify(BOARD.original_board));
@@ -412,13 +425,3 @@ $(function(){
     $("#app-wrap").removeClass("hidden");
     $("#loading").addClass("hidden");
 });
-
-var JoesFunc = function() {
-    fetch("/startPlaying", {method: "POST"});
-}
-
-
-//|||||||||||||||||||||||||||||||||||||
-socket.on("Hewwo", (e) => {
-    alert(e);
-})
