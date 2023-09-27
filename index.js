@@ -35,6 +35,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(PORT);
   console.log('listening on *: ' + PORT);
 });
