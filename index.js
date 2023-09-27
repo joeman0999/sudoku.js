@@ -21,10 +21,11 @@ app.post('/git', (req, res) => {
       if (data) console.log(data);
       if (err) console.log(err);
     });
-  }
+  
   cmd.run('refresh');  // Refresh project
 
   console.log("> [GIT] Updated with origin/master");
+  }
 
   return res.sendStatus(200); // Send back OK status
 });
