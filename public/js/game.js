@@ -1,5 +1,5 @@
 // Code for a multiplayer sudoku
-// 2
+// 4
 /*
 Additional Controls:
     arrow keys to move squares
