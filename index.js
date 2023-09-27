@@ -5,7 +5,6 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 const cmd = require("node-cmd");
-const PORT = process.env.PORT || 3000;
 
 app.use('/public', express.static(process.cwd() + '/public'));
 
@@ -34,6 +33,7 @@ io.on('connection', (socket) => {
   console.log('a user connected');
 });
 
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log('listening on *: ' + PORT);
 });
