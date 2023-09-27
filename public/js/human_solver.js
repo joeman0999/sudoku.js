@@ -78,9 +78,9 @@ sudoku.human_solve = function(board) {
     }
 
     // while the puzzle is not solved keep trying to solve it
-    while (!sudoku.check_candidates(candidates)) {
+    // while (!sudoku.check_candidates(candidates)) {
 
-    }
+    // }
 
     return difficulty;
 }
