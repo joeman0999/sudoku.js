@@ -21,11 +21,12 @@
     
     // Define difficulties by how many squares are given to the player in a new
     // puzzle.
-    var DIFFICULTY = {
+    sudoku.DIFFICULTY = {
         "easy":         53,
         "medium":       44,
         "hard":         35,
-        "insane":       26
+        "insane":       26,
+        "import":       1 // used to count import as a valid difficulty
     };
 
     var DIFFICULTY_RANGES = {
@@ -124,7 +125,7 @@
         // If `difficulty` is a string or undefined, convert it to a number or
         // default it to "easy" if undefined.
         if(typeof difficulty === "string" || typeof difficulty === "undefined"){
-            if (!DIFFICULTY[difficulty]) {
+            if (!sudoku.DIFFICULTY[difficulty]) {
                 difficulty = "easy";
             }
             var max = DIFFICULTY_RANGES[difficulty]["max"];
@@ -207,8 +208,8 @@
                     var solution = sudoku.solve(board, false);
                     var solution2 = sudoku.solve(board, true);
                     if(solution !== false && solution == solution2){
-                        var difficulty = sudoku.human_solve(board);
-                        return {board, solution};
+                        var true_difficulty = sudoku.human_solve(board);
+                        return {board, solution, true_difficulty};
                     } else {
                         // try again
                         break;

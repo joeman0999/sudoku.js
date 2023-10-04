@@ -32,41 +32,79 @@
         <div id="app-wrap" class="container-narrow hidden">
             <!-- Masthead -->
             <h1>Sudoku</h1>
-            <p class="lead">
-                Select a difficulty
-            </p>
 
-            <br>
+            <p id="room-tag"></p>
+
+            <!-- Message box -->
+            <div id="message" class="alert alert-error">
+                <button type="button" class="close" data-dismiss="alert">
+                    &times;
+                </button>
+                <div id="text"></div>
+            </div>
+
+            <div id="splash">
+                <br>
+                <br>
+                <div id="create-form">
+                    <button id="create-button">Create Room</button>
+                </div>
+                <div id="join-form">
+                    <input id="join-code"
+                        class="input-block-level" 
+                        placeholder="Room Code"
+                        maxlength="6"
+                        type="text"/>
+                    <button id="join-button">Join Room</button>
+                </div>
+                <p id="submit"></p>
+            </div>
             
-            <!-- Tabs -->
-            <ul id="generator-tabs" class="nav nav-tabs">
-                <li>
-                    <button id="easy" rel="tooltip" 
-                            title="Generate a easy puzzle" href="#">Easy</button>
-                </li>
-                <li>
-                    <button id="medium" rel="tooltip" title="Generate a medium puzzle" 
-                            href="#">Medium</button>
-                </li>
-                <li>
-                    <button id="hard" rel="tooltip" 
-                            title="Generate a hard puzzle" href="#">Hard</button>
-                </li>
-                <li>
-                    <button id="insane" rel="tooltip" 
-                            title="Generate an insane puzzle" href="#">Insane</button>
-                </li>
-                <li class="pull-right" hidden="True">
-                    <button id="import" rel="tooltip" title="Import your own puzzle" 
-                            href="#" >Import...</button>
-                </li>
-            </ul>
+            <div id="options-menu">
+                <!-- <p class="lead">
+                    Select a difficulty
+                </p> -->
+                <!-- Tabs -->
+                <ul id="difficulty-tabs" class="nav nav-tabs">
+                    <li>
+                        <button id="easy" rel="tooltip" 
+                                title="Generate a easy puzzle" href="#">Easy</button>
+                    </li>
+                    <li>
+                        <button id="medium" rel="tooltip" title="Generate a medium puzzle" 
+                                href="#">Medium</button>
+                    </li>
+                    <li>
+                        <button id="hard" rel="tooltip" 
+                                title="Generate a hard puzzle" href="#">Hard</button>
+                    </li>
+                    <!-- unnecessary difficulty -->
+                    <li hidden="true" >
+                        <button id="insane" rel="tooltip"
+                                title="Generate an insane puzzle" href="#">Insane</button>
+                    </li>
+                    <li class="pull-right" >
+                        <button id="import" rel="tooltip" title="Import your own puzzle" 
+                                href="#" >Import...</button>
+                    </li>
+                </ul>
+                <div id="import-controls" hidden="True">
+                    <input id="import-string" class="input-block-level" 
+                        placeholder="Enter a puzzle as a string of 81 digits, 1-9, and '.' as spaces."
+                        maxlength="81"
+                        type="text"/>
+                </div>
+                <div id="game-type">
+                    <button id="co-op">Co-Op</button>
+                    <button id="vs">vs</button>
+                </div>
+                <button id="show-mistakes">Check For Mistakes</button>
+                <br>
+                <button id="start-game">Start</button>
+            </div>
             
-            <div id="import-controls" hidden="True">
-                <input id="import-string" class="input-block-level" 
-                    placeholder="Enter a puzzle as a string of 81 digits, 1-9, and '.' as spaces."
-                    maxlength="81"
-                    type="text"/>
+            <div id="waiting-screen" hidden = "true">
+                <p>Waiting for game to start</p>
             </div>
             
 
@@ -97,14 +135,6 @@
                 </div>
             </div>
             
-            <!-- Message box -->
-            <div id="message" class="alert alert-error">
-                <button type="button" class="close" data-dismiss="alert">
-                    &times;
-                </button>
-                <div id="text"></div>
-            </div>
-            
             <!-- Solver buttons -->
             <div id="solver-controls">
                 <button id="solve" class="btn btn-primary" rel="tooltip" 
@@ -115,8 +145,6 @@
                         data-placement="bottom">Show Candidates</button>
             </div>
         </div> <!-- /container -->
-        
-        <button onclick="JoesFunc()">Joes Button</button>
 
         <!-- javascript
              (Placed at the bottom so the DOM loads faster) -->

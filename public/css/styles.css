@@ -46,6 +46,53 @@ body {
     text-align: center;
 }
 
+div#splash {
+    border: 5px solid;
+    margin:auto;
+    margin-top: 70px;
+    width: 250px;
+    padding: 10px;
+}
+
+div#create-form {
+    text-align: center;
+    float: left; 
+    /* borders added for visibility. Just remove them */
+    border: 1px solid red;
+}
+
+div#join-form {
+    clear: right;
+    margin-right: 20px; 
+    text-align: center;
+    float: right;
+    border: 1px solid red;
+}
+
+input#join-code {
+    width: 100px;
+    display:list-item;
+    float: center;
+}
+
+button#join-button {
+    width: 100px;
+    display:list-item;
+    float: center;
+}
+
+button#create-button {
+    width: 100px;
+}
+
+.option-selected {
+    background-color: blue;
+}
+
+p#submit {
+    clear: both;
+}
+
 table.innerTable {
     display: block;
     margin:0px;

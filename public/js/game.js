@@ -6,20 +6,33 @@ Additional Controls:
     number keys for editing squares
     tab to switch between cell nad note
 
-Code remaining techniques
+Code remaining human solvable techniques
+
+Create Room     Join Room
+vs   co-op      Room: [   ]   Join
+
+
 */
 
 var socket = io();
 
 // Selectors
-var BOARD_SEL = "#sudoku-board";
-var TABS_SEL = "#generator-tabs";
-var MESSAGE_SEL = "#message";
-var PUZZLE_CONTROLS_SEL = "#puzzle-controls";
-var IMPORT_CONTROLS_SEL = "#import-controls";
-var SOLVER_CONTROLS_SEL = "#solver-controls";
+const BOARD_SEL = "#sudoku-board";
+const TABS_SEL = "#difficulty-tabs";
+const MESSAGE_SEL = "#message";
+const PUZZLE_CONTROLS_SEL = "#puzzle-controls";
+const IMPORT_CONTROLS_SEL = "#import-controls";
+const SOLVER_CONTROLS_SEL = "#solver-controls";
 
 var $selected_square = null;
+
+var ROOM = {
+    "code": null,
+    "leader": false,
+    "roomType": null,
+    "mistakesCheck": false,
+    "difficulty": null
+}
 
 // Boards
 // Cached puzzles grids
@@ -152,17 +165,37 @@ var init_board = function(){
     });
 };
 
-var init_tabs = function(){
-    /* Initialize the Sudoku generator tabs
-    */
+var init_menu_controls = function() {
+    // CONTROLS
+    // Create-Game button
+    $("#create-button").click(function(e){
+        socket.emit('create-request');
+    });
 
+    // Join-Game button
+    $("#join-button").click(function(e){
+        const roomCodeLength = 5;
+        var code = $("#join-code").val();
+        if(code.length == roomCodeLength) {
+            socket.emit('join-request', code);
+        } else {
+            $(MESSAGE_SEL + " #text")
+                .html("<strong>Unable to join room!</strong> "
+                + "Check code and try again.");
+            $(MESSAGE_SEL).show();
+        }
+    });
+
+    // Initialize the Sudoku difficulty tabs
     $(TABS_SEL + " button").click(function(e){
         e.preventDefault();
         var $t = $(this);
+        if (sudoku.DIFFICULTY[BOARD.difficulty]) {
+            $("#" + BOARD.difficulty).removeClass("option-selected");
+        }
         BOARD.difficulty = $t.attr("id");
-        
-        // Hide any error messages
-        $(MESSAGE_SEL).hide();
+        ROOM["difficulty"] = BOARD.difficulty;
+        $t.addClass("option-selected");
         
         // If it's the import tab
         if(BOARD.difficulty === "import"){
@@ -172,88 +205,55 @@ var init_tabs = function(){
         // Otherwise it's a normal difficulty tab
         } else {
             $(PUZZLE_CONTROLS_SEL).show();
-            $(SOLVER_CONTROLS_SEL).show();
+            //$(SOLVER_CONTROLS_SEL).show();
             $(IMPORT_CONTROLS_SEL).hide();
         }
-
-        show_puzzle();
-        $t.tab('show');
     });
 
-    $(PUZZLE_CONTROLS_SEL).hide();
-    $(SOLVER_CONTROLS_SEL).hide();
-};
-
-var init_controls = function(){
-    /* Initialize the controls
-    */
-    
-    // Notes Option
-    $(PUZZLE_CONTROLS_SEL + " #notes").click(function(e){
+    $("#game-type button").click(function(e){
+        if (ROOM["roomType"]) {
+            $("#" + ROOM["roomType"]).removeClass("option-selected");
+        }
         e.preventDefault();
-        var text = $(this).text();
-        if (text == "Cell") {
-            $(this).text("Notes");
-            $(this).title = "Write a note in a cell";
+        var $t = $(this);
+        ROOM["roomType"] = $t.attr("id");
+        $t.addClass("option-selected");
+
+    })
+
+    $("#show-mistakes").click(function(e){
+        e.preventDefault();
+        var $t = $(this);
+        if (ROOM["mistakesCheck"]) {
+            $t.removeClass("option-selected");
+            ROOM["mistakesCheck"] = false;
         } else {
-            $(this).text("Cell");
-            $(this).title = "Write a number in a cell";
+            ROOM["mistakesCheck"] = true;
+            $t.addClass("option-selected");
         }
+    })
+
+    // Start game button
+    $("#start-game").click(function(e){
+        e.preventDefault();
+
+        $("#options-menu").hide();
+        $("#loading").show();
+
+        if(BOARD.difficulty === null){
+            $(MESSAGE_SEL + " #text")
+                    .html("<strong>Select a difficulty.</strong> ");
+            $(MESSAGE_SEL).show();
+            return;
+        } else if (ROOM["roomType"] === null) {
+            $(MESSAGE_SEL + " #text")
+                    .html("<strong>Select the type of game.</strong> ");
+            $(MESSAGE_SEL).show();
+            return;
+        }
+        const myTimeout = setTimeout(start_game, 100); // allows page to load
     });
 
-    $(PUZZLE_CONTROLS_SEL + " #reset").click(function(e){
-        e.preventDefault();
-        BOARD.user_vals = JSON.parse(JSON.stringify(BOARD.original_board));
-        BOARD.candidates = JSON.parse(JSON.stringify(BOARD.original_board));
-        // Display the puzzle
-        display_puzzle(BOARD.original_board, null, null);
-        
-    });
-    
-    // Number buttons
-    $("#number-buttons button").click(function(e){
-        e.preventDefault();
-        
-        if ($selected_square != null) {
-            var row = $selected_square.attr("id")[3];
-            var column = $selected_square.attr("id")[8];
-            if (BOARD.original_board[row][column] == sudoku.BLANK_CHAR) {
-                $selected_square.addClass("green-text");
-                var number = $(this).text();
-                if ($(PUZZLE_CONTROLS_SEL + " #notes").text() == "Cell") {
-                    
-                    if (BOARD.user_vals[row][column] == number) {
-                        // number is there set it to nothing
-                        BOARD.user_vals[row][column] = "";
-                    } else {
-                        // number is not there set it to the new number and erase the candidates for this square
-                        BOARD.user_vals[row][column] = number;
-                        BOARD.candidates[row][column] = "";
-                        
-                        console.log(sudoku.SQUARE_PEERS_MAP);
-                        var map_pos = sudoku.pos_to_map(row, column);
-                        for(var ui in sudoku.SQUARE_PEERS_MAP[map_pos]){
-                            var x = sudoku.SQUARE_PEERS_MAP[map_pos][ui];
-                            var row_col = sudoku.map_to_pos(x);
-                            BOARD.candidates[row_col.row][row_col.col] = BOARD.candidates[row_col.row][row_col.col].replace(number, '');
-                        }
-                    }
-                } else {
-                    BOARD.user_vals[row][column] = "";
-                    if (BOARD.candidates[row][column].includes(number)) {
-                        BOARD.candidates[row][column] = BOARD.candidates[row][column].replace(number, '');
-                    } else if (BOARD.candidates[row][column] == sudoku.BLANK_CHAR) {
-                        BOARD.candidates[row][column] = number;
-                    } else {
-                        BOARD.candidates[row][column] += number;
-                    }
-                }
-            }
-            display_puzzle(BOARD.original_board, BOARD.user_vals, BOARD.candidates);
-        }
-
-    });
-    
     // Import controls
     $(IMPORT_CONTROLS_SEL + " #import-string").change(function(){
         /* Update the board to reflect the import string
@@ -271,12 +271,84 @@ var init_controls = function(){
         }
         BOARD.original_board = sudoku.board_string_to_grid(processed_board);
         BOARD.difficulty = "import";
-        show_puzzle();
     });
+
     $(IMPORT_CONTROLS_SEL + " #import-string").keyup(function(){
         /* Fire a change event on keyup, enforce digits
         */
         $(this).change();
+    });
+
+    $("#game").hide();
+    $("#options-menu").hide();
+    $(PUZZLE_CONTROLS_SEL).hide();
+    $(SOLVER_CONTROLS_SEL).hide();
+}
+
+var init_controls = function(){
+    /* Initialize the controls
+    */
+    // Notes Option
+    $(PUZZLE_CONTROLS_SEL + " #notes").click(function(e){
+        e.preventDefault();
+        var text = $(this).text();
+        if (text == "Cell") {
+            $(this).text("Notes");
+            $(this).title = "Write a note in a cell";
+        } else {
+            $(this).text("Cell");
+            $(this).title = "Write a number in a cell";
+        }
+    });
+    $(PUZZLE_CONTROLS_SEL + " #reset").click(function(e){
+        e.preventDefault();
+        BOARD.user_vals = JSON.parse(JSON.stringify(BOARD.original_board));
+        BOARD.candidates = JSON.parse(JSON.stringify(BOARD.original_board));
+        // Display the puzzle
+        display_puzzle(BOARD.original_board, null, null);
+        
+    });
+    
+    // Number buttons
+    $("#number-buttons button").click(function(e){
+        e.preventDefault();
+        
+        if ($selected_square != null) {
+            var row = $selected_square.attr("id")[3];
+            var column = $selected_square.attr("id")[8];
+            if (BOARD.original_board[row][column] == sudoku.BLANK_CHAR) {
+                var number = $(this).text();
+                if ($(PUZZLE_CONTROLS_SEL + " #notes").text() == "Cell") {
+                    
+                    if (BOARD.user_vals[row][column] == number) {
+                        // number is there set it to nothing
+                        BOARD.user_vals[row][column] = ".";
+                    } else {
+                        // number is not there set it to the new number and erase the candidates for this square
+                        BOARD.user_vals[row][column] = number;
+                        BOARD.candidates[row][column] = ".";
+                        
+                        var map_pos = sudoku.pos_to_map(row, column);
+                        for(var ui in sudoku.SQUARE_PEERS_MAP[map_pos]){
+                            var x = sudoku.SQUARE_PEERS_MAP[map_pos][ui];
+                            var row_col = sudoku.map_to_pos(x);
+                            BOARD.candidates[row_col.row][row_col.col] = BOARD.candidates[row_col.row][row_col.col].replace(number, '');
+                        }
+                    }
+                } else {
+                    BOARD.user_vals[row][column] = ".";
+                    if (BOARD.candidates[row][column].includes(number)) {
+                        BOARD.candidates[row][column] = BOARD.candidates[row][column].replace(number, '');
+                    } else if (BOARD.candidates[row][column] == sudoku.BLANK_CHAR) {
+                        BOARD.candidates[row][column] = number;
+                    } else {
+                        BOARD.candidates[row][column] += number;
+                    }
+                }
+            }
+            socket.emit('update-request', BOARD);
+        }
+
     });
     
     // Solver controls
@@ -305,7 +377,36 @@ var init_message = function(){
     
     //Hide initially
     $(MESSAGE_SEL).hide();
-}
+};
+
+var start_game = function() {
+    if(BOARD.difficulty === "import"){
+        //BOARD.original_board = sudoku.board_string_to_grid(sudoku.BLANK_BOARD); // should already be set
+        var solution = sudoku.solve(sudoku.board_grid_to_string(BOARD.original_board), false);
+        var solution2 = sudoku.solve(sudoku.board_grid_to_string(BOARD.original_board), true);
+        if(solution === false){
+            $(MESSAGE_SEL + " #text")
+                .html("<strong>Unable to solve imported puzzle!</strong> "
+                + "Check puzzle and try again.");
+            $(MESSAGE_SEL).show();
+            return;
+        } else if (solution == solution2) {
+            BOARD.true_difficulty = sudoku.human_solve(sudoku.board_grid_to_string(BOARD.original_board));
+            BOARD.solution = sudoku.board_string_to_grid(solution);
+        }
+    } else {
+        var result = sudoku.generate(BOARD.difficulty);
+        BOARD.original_board = sudoku.board_string_to_grid(result.board);
+        BOARD.solution = sudoku.board_string_to_grid(result.solution);
+        BOARD.true_difficulty = result.true_difficulty;
+    }
+    BOARD.user_vals = JSON.parse(JSON.stringify(BOARD.original_board));
+    BOARD.candidates = JSON.parse(JSON.stringify(BOARD.original_board));
+    console.log("what happened?");
+    console.log(BOARD);
+    socket.emit('start-request', BOARD);
+    console.log(BOARD);
+};
 
 var solve_puzzle = function(){
     /* Solve the specified puzzle
@@ -356,29 +457,6 @@ var get_initial_candidates = function(){
     }
 }
 
-var show_puzzle = function(){
-    /* Create and show the puzzle
-    */
-    
-    // If not a valid puzzle, default -> "easy"
-    if(typeof BOARD.original_board === "undefined"){
-        BOARD.difficulty = "easy";
-    }
-    
-
-    if(BOARD.difficulty === "import"){
-        BOARD.original_board = sudoku.board_string_to_grid(sudoku.BLANK_BOARD);
-    } else {
-        var result = sudoku.generate(BOARD.difficulty);
-        BOARD.original_board = sudoku.board_string_to_grid(result.board);
-        BOARD.solution = sudoku.board_string_to_grid(result.solution);
-    }
-    BOARD.user_vals = JSON.parse(JSON.stringify(BOARD.original_board));
-    BOARD.candidates = JSON.parse(JSON.stringify(BOARD.original_board));
-    // Display the puzzle
-    display_puzzle(BOARD.original_board, null, null);
-}
-
 var display_puzzle = function(org_board, new_board, markups){
     /* Display a Sudoku puzzle on the board. */
     for(var r = 0; r < 9; ++r){
@@ -407,11 +485,87 @@ var click_tab = function(tab_name){
     $(TABS_SEL + " #" + tab_name).click();
 };
 
+socket.on('join-reply', function(data) {
+    if (data == null || data.message == null) {
+        return; // shouldn't ever happen but just in case
+    } else if (data["message"] == "Room does not exist") {
+        $(MESSAGE_SEL + " #text")
+                .html("<strong>Unable to join room!</strong> "
+                + "Check code and try again.");
+        $(MESSAGE_SEL).show();
+        return;
+    } else if (data["message"] == "Room full") {
+        $(MESSAGE_SEL + " #text")
+                .html("<strong>Unable to join room!</strong> "
+                + "Room at max occupancy.");
+        $(MESSAGE_SEL).show();
+        return;
+    } else if (data["message"] == "Room joined") {
+        $("#splash").hide();
+        
+        ROOM["code"] = data['room'];
+        ROOM["leader"] = data['leader'];
+        $("#room-tag").text("Room: " + data['room']);
+
+        if (ROOM["leader"]) {
+            $("#options-menu").show();
+        } else if (data['board']) {
+            BOARD = data['board'];
+            $("#game").show();
+            $(PUZZLE_CONTROLS_SEL).show();
+            $(SOLVER_CONTROLS_SEL).show();
+            display_puzzle(BOARD.original_board, BOARD.user_vals, BOARD.candidates);
+        } else {
+            $("#loading").show();
+            $("#waiting-screen").show();
+        }
+    }
+});
+
+socket.on('start-event', function(data) {
+    console.log("start-event started")
+    // Show the puzzle and controls
+    $("#game").show();
+    $(PUZZLE_CONTROLS_SEL).show();
+    $(SOLVER_CONTROLS_SEL).show();
+    // Hide options
+    $("#options-menu").hide();
+    $("#loading").hide();
+    $("#waiting-screen").hide();
+
+    BOARD = data;
+    display_puzzle(BOARD.original_board, null, null);
+});
+
+socket.on('join-event', function(data) {
+    // data.message = "NAME";
+    // useful later for tracking the names of the people in the room
+});
+
+socket.on('update-event', function(data) {
+    BOARD = data;
+    display_puzzle(BOARD.original_board, BOARD.user_vals, BOARD.candidates);
+});
+
+socket.on('new-leader', function(data) {
+    if (data == null) {
+        ROOM["leader"] = true;
+    } else {
+        // ROOM["leader"] = data['leader'];
+    }
+    
+
+    $("#options-menu").show();
+    $("#loading").hide();
+    $("#waiting-screen").hide();
+});
+
+
 // "Main" (document ready)
 $(function(){
     build_board();
     init_board();
-    init_tabs();
+    init_menu_controls();
     init_controls();
     init_message();
     
@@ -423,5 +577,5 @@ $(function(){
     
     // Hide the loading screen, show the app
     $("#app-wrap").removeClass("hidden");
-    $("#loading").addClass("hidden");
+    $("#loading").hide();
 });
