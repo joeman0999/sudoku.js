@@ -252,7 +252,7 @@ var init_menu_controls = function() {
             return;
         }
         const myTimeout = setTimeout(start_game, 100); // allows page to load
-    });
+    }); 
 
     // Import controls
     $(IMPORT_CONTROLS_SEL + " #import-string").change(function(){
