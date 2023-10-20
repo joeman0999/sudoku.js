@@ -305,7 +305,7 @@ var init_controls = function(){
         BOARD.user_vals = JSON.parse(JSON.stringify(BOARD.original_board));
         BOARD.candidates = JSON.parse(JSON.stringify(BOARD.original_board));
         // Display the puzzle
-        display_puzzle(BOARD.original_board, null, null);
+        display_puzzle(BOARD.original_board, null, null, null);
         
     });
     
@@ -358,7 +358,7 @@ var init_controls = function(){
         e.preventDefault();
         var solution = solve_puzzle();
         if (solution != null) {
-            display_puzzle(BOARD.original_board, solution, null);
+            display_puzzle(BOARD.original_board, solution, null, null);
             $(MESSAGE_SEL).hide();
         }
     });
@@ -402,10 +402,12 @@ var start_game = function() {
     }
     BOARD.user_vals = JSON.parse(JSON.stringify(BOARD.original_board));
     BOARD.candidates = JSON.parse(JSON.stringify(BOARD.original_board));
-    console.log("what happened?");
-    console.log(BOARD);
-    socket.emit('start-request', BOARD);
-    console.log(BOARD);
+    var message = {
+    "BOARD": BOARD,
+    "ROOM": {"roomType": ROOM.roomType,
+    "mistakesCheck": ROOM.mistakesCheck}
+    }
+    socket.emit('start-request', message);
 };
 
 var solve_puzzle = function(){
@@ -451,31 +453,49 @@ var get_initial_candidates = function(){
         
         
         // Display the candidates
-        display_puzzle(BOARD.original_board, null, candidates);
+        display_puzzle(BOARD.original_board, null, candidates, null);
         $(MESSAGE_SEL).hide();
         return candidates;
     }
 }
 
-var display_puzzle = function(org_board, new_board, markups){
+var display_puzzle = function(org_board, new_board, markups, solution){
     /* Display a Sudoku puzzle on the board. */
+    var complete = true;
     for(var r = 0; r < 9; ++r){
         for(var c = 0; c < 9; ++c){
             var $square = $(BOARD_SEL + " div#row" + r + "-col" + c);
             $square.removeClass("green-text");
+            $square.removeClass("red-text");
             if(org_board[r][c] != sudoku.BLANK_CHAR){
                 $square.text(org_board[r][c]);
             } else if (new_board != null && new_board[r][c] != sudoku.BLANK_CHAR) {
-                $square.addClass("green-text");
+                if (new_board[r][c] != solution[r][c]) {
+                    complete = false;
+                    if (ROOM["mistakesCheck"]) {
+                        $square.addClass("red-text");
+                    } else {
+                        $square.addClass("green-text");
+                    }
+                } else {
+                    $square.addClass("green-text");
+                }
                 $square.text(new_board[r][c]);
             } else if (markups != null && markups[r][c] != sudoku.BLANK_BOARD) {
                 $square.text("");
                 $square.addClass("green-text");
                 $square.append(build_markup_square(markups[r][c]));
+                complete = false;
             } else {
+                complete = false;
                 $square.text("");
             }
         }
+    }
+    if (complete == true) {
+        $(MESSAGE_SEL + " #text")
+                .html("<strong>You win!</strong> ");
+        $(MESSAGE_SEL).show();
     }
 };
 
@@ -505,6 +525,8 @@ socket.on('join-reply', function(data) {
         
         ROOM["code"] = data['room'];
         ROOM["leader"] = data['leader'];
+        ROOM["mistakesCheck"] = data['mistakesCheck'] || false;
+        ROOM["roomType"] = data["roomType"];
         $("#room-tag").text("Room: " + data['room']);
 
         if (ROOM["leader"]) {
@@ -514,7 +536,7 @@ socket.on('join-reply', function(data) {
             $("#game").show();
             $(PUZZLE_CONTROLS_SEL).show();
             $(SOLVER_CONTROLS_SEL).show();
-            display_puzzle(BOARD.original_board, BOARD.user_vals, BOARD.candidates);
+            display_puzzle(BOARD.original_board, BOARD.user_vals, BOARD.candidates, BOARD.solution);
         } else {
             $("#loading").show();
             $("#waiting-screen").show();
@@ -523,7 +545,6 @@ socket.on('join-reply', function(data) {
 });
 
 socket.on('start-event', function(data) {
-    console.log("start-event started")
     // Show the puzzle and controls
     $("#game").show();
     $(PUZZLE_CONTROLS_SEL).show();
@@ -533,8 +554,8 @@ socket.on('start-event', function(data) {
     $("#loading").hide();
     $("#waiting-screen").hide();
 
-    BOARD = data;
-    display_puzzle(BOARD.original_board, null, null);
+    BOARD = data.BOARD;
+    display_puzzle(BOARD.original_board, null, null, null);
 });
 
 socket.on('join-event', function(data) {
@@ -544,7 +565,7 @@ socket.on('join-event', function(data) {
 
 socket.on('update-event', function(data) {
     BOARD = data;
-    display_puzzle(BOARD.original_board, BOARD.user_vals, BOARD.candidates);
+    display_puzzle(BOARD.original_board, BOARD.user_vals, BOARD.candidates, BOARD.solution);
 });
 
 socket.on('new-leader', function(data) {

@@ -94,6 +94,8 @@ io.on('connection', (socket) => {
     response["room"] = data;
     response["leader"] = false;
     response["board"] = ROOMS[data]["board"] || null;
+    response["roomType"] = ROOMS[data]["roomType"] || null;
+    response["mistakesCheck"] = ROOMS[data]["mistakesCheck"] || null;
     ROOMS[data]["memberCount"]++;
     playingClients[socket.id] = data;
     socket.emit("join-reply", response);
@@ -139,13 +141,19 @@ io.on('connection', (socket) => {
  });
 
   socket.on('start-request', data => {
-    if (data == null || data.candidates == null || data.difficulty == null || data.original_board == null || data.solution == null || data.true_difficulty == null || data.user_vals == null) {
+    if (data == null || data.BOARD == null || data.BOARD.candidates == null || 
+      data.BOARD.difficulty == null || data.BOARD.original_board == null || 
+      data.BOARD.solution == null || data.BOARD.true_difficulty == null || 
+      data.BOARD.user_vals == null || data.ROOM.roomType == null || 
+      data.ROOM.mistakesCheck == null) {
       console.log("Failed start-request");
       console.log(data);
       return;
     } else if (playingClients[socket.id]) {
       var room = playingClients[socket.id];
-      ROOMS[room]["board"] = data;
+      ROOMS[room]["board"] = data.BOARD;
+      ROOMS[room]["roomType"] = data.ROOM.roomType;
+      ROOMS[room]["mistakesCheck"] = data.ROOM.mistakesCheck;
       io.to(room).emit('start-event', data);
     }
   });

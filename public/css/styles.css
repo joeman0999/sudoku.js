@@ -146,6 +146,10 @@ table.innerTable div.innerSquare {
     color: ForestGreen !important;
 }
 
+.red-text {
+    color: red !important;
+}
+
 .bold-text {
     font-weight: bold;
 }
